@@ -1,0 +1,21 @@
+{
+  "version": 1.1,
+  "atDirectives": [
+    {
+      "name": "@tailwind",
+      "description": "Inject Tailwind base, components, utilities."
+    },
+    {
+      "name": "@apply",
+      "description": "Apply Tailwind utility classes inline."
+    },
+    {
+      "name": "@layer",
+      "description": "Declare a Tailwind cascade layer (base, components, utilities)."
+    },
+    {
+      "name": "@config",
+      "description": "Specify a Tailwind config file path."
+    }
+  ]
+}
