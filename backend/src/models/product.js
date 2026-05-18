@@ -15,6 +15,8 @@ const productSchema = new mongoose.Schema({
   stock: { type: Number, required: true },
   sold: { type: Number, default: 0 },
   category: { type: String, required: true },
+  /** Ảnh đại diện (thumbnail) — lưu URL trong database */
+  avatar: { type: String, default: '' },
   images: [imageSchema],
   rating: { type: Number, default: 5, min: 0, max: 5 },
   reviews: { type: Number, default: 0 },
@@ -31,5 +33,13 @@ productSchema.index({ title: "text", description: "text" });
 productSchema.index({ category: 1 });
 productSchema.index({ createdAt: -1 });
 productSchema.index({ sold: -1 });
+
+productSchema.pre('save', function syncAvatar(next) {
+  if (!this.avatar && this.images?.length) {
+    this.avatar = this.images[0].url;
+  }
+  this.updatedAt = new Date();
+  next();
+});
 
 module.exports = mongoose.model('Product', productSchema);

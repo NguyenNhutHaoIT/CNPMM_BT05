@@ -1,13 +1,11 @@
 require('dotenv').config();
-const mongoose = require('mongoose');
 const connection = require('../config/database');
 const Product = require('../models/product');
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
+const { img, resolveProductImages, withAvatar } = require('../utils/productImages');
 
 const saltRounds = 10;
-
-const img = (url, alt) => ({ url, alt });
 
 const products = [
   {
@@ -263,8 +261,15 @@ const seed = async () => {
     console.log('   Password: 123456');
     console.log('   Vai trò: Member');
 
-    await Product.insertMany(products);
-    console.log(`✅ Đã tạo ${products.length} sản phẩm giày dép`);
+    const seeded = products.map((p) =>
+      withAvatar({
+        ...p,
+        images: resolveProductImages(p.slug, p.images),
+      })
+    );
+
+    await Product.insertMany(seeded);
+    console.log(`✅ Đã tạo ${seeded.length} sản phẩm giày dép (có avatar + ảnh trong DB)`);
 
     process.exit(0);
   } catch (err) {

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { resolveImageUrl } from '../../utils/imageUrl';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Thumbs } from 'swiper';
 import 'swiper/css';
@@ -9,7 +10,9 @@ export default function ProductSwiper({ images = [], title = '' }) {
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const list = images.filter((img) => img?.url);
+  const list = images
+    .filter((img) => img?.url)
+    .map((img) => ({ ...img, url: resolveImageUrl(img.url) }));
   const hasMany = list.length > 1;
 
   if (!list.length) {

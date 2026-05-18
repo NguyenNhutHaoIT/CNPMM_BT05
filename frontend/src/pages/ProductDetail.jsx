@@ -5,6 +5,7 @@ import ProductCard from '../components/ProductCard';
 import ProductSwiper from '../components/product/ProductSwiper';
 import StockStatus from '../components/product/StockStatus';
 import QuantityStepper from '../components/product/QuantityStepper';
+import { productAvatar } from '../utils/imageUrl';
 
 function Badge({ type }) {
   if (type === 'new') return <span className="tag tag-new">✦ Mới</span>;
@@ -63,7 +64,7 @@ export default function ProductDetail() {
       slug: product.slug,
       title: product.title,
       price: product.price,
-      image: product.images?.[0]?.url,
+      image: productAvatar(product),
       quantity,
     };
     if (idx >= 0) {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { productAvatar, resolveImageUrl } from '../utils/imageUrl';
 
 export default function ProductCard({ product }) {
   const [hovered, setHovered] = useState(false);
@@ -16,9 +17,9 @@ export default function ProductCard({ product }) {
       <div className="product-card-media">
         <img
           src={
-            hovered && product.images?.[1]
-              ? product.images[1].url
-              : product.images?.[0]?.url || 'https://via.placeholder.com/600x750?text=No+Image'
+            hovered && product.images?.[1]?.url
+              ? resolveImageUrl(product.images[1].url)
+              : productAvatar(product)
           }
           alt={product.title}
           className="transition-transform duration-500"

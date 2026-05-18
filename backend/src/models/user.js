@@ -4,6 +4,7 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true },
+  avatar: { type: String, default: '' }, // URL ảnh avatar
   role: { type: String, default: "Member" },
   points: { type: Number, default: 0 },
   memberRank: { type: String, default: "Silver" },
