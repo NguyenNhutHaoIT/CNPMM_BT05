@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { productAvatar, resolveImageUrl } from '../utils/imageUrl';
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, showViews = false, compact = false }) {
   const [hovered, setHovered] = useState(false);
   const discount = product.discount || 0;
   const inStock = product.stock > 0;
@@ -10,7 +10,7 @@ export default function ProductCard({ product }) {
   return (
     <Link
       to={`/product/${product.slug}`}
-      className="product-card"
+      className={`product-card${compact ? ' product-card--compact' : ''}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -87,6 +87,12 @@ export default function ProductCard({ product }) {
           <span>{product.rating || 4.5}</span>
           <span>·</span>
           <span>Bán {(product.sold || 0).toLocaleString('vi-VN')}</span>
+          {showViews && (
+            <>
+              <span>·</span>
+              <span>{(product.views || 0).toLocaleString('vi-VN')} lượt xem</span>
+            </>
+          )}
         </div>
 
         <div className="product-card-footer">

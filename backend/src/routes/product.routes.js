@@ -5,7 +5,9 @@ const {
   getFeaturedProducts,
   getNewProducts,
   getHotProducts,
-  getCategories
+  getCategories,
+  getTopSelling,
+  getMostViewed,
 } = require('../controllers/productController');
 const { uploadProductImages } = require('../controllers/uploadController');
 const { uploadProductImages: uploadMiddleware } = require('../middleware/upload.middleware');
@@ -16,6 +18,8 @@ router.get('/featured', getFeaturedProducts);
 router.get('/new', getNewProducts);
 router.get('/hot', getHotProducts);
 router.get('/categories', getCategories);
+router.get('/top-selling', getTopSelling);
+router.get('/most-viewed', getMostViewed);
 router.get('/', getProducts);
 router.get('/:slug', getProduct);
 

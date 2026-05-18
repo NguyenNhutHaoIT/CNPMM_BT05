@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import axios from '../api/axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { mapUserToAuth } from '../utils/userProfile';
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -28,7 +29,7 @@ export default function Login() {
           return;
         }
         localStorage.setItem('access_token', res.DT.access_token);
-        setAuth({ isAuthenticated: true, user: res.DT.user });
+        setAuth({ isAuthenticated: true, user: mapUserToAuth(res.DT.user) });
         nav('/', { replace: true });
       } else {
         setError(res.EM || 'Email hoặc mật khẩu không đúng');

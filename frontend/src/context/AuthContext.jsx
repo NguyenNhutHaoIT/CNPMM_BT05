@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import axios from '../api/axios';
+import { mapUserToAuth } from '../utils/userProfile';
 
 export const AuthContext = createContext();
 
@@ -11,20 +12,13 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('access_token');
 
     if (token) {
-      axios.get('/auth/profile')
-        .then(res => {
+      axios
+        .get('/auth/profile')
+        .then((res) => {
           if (res?.EC === 0) {
-            const u = res.DT;
             setAuth({
               isAuthenticated: true,
-              user: {
-                id: u._id || u.id,
-                name: u.name,
-                email: u.email,
-                role: u.role,
-                points: u.points ?? 0,
-                memberRank: u.memberRank ?? 'Silver',
-              },
+              user: mapUserToAuth(res.DT),
             });
           } else {
             localStorage.removeItem('access_token');

@@ -20,10 +20,9 @@ const getProducts = async (req, res) => {
 const getProduct = async (req, res) => {
   try {
     const { slug } = req.params;
-    const product = await productService.getProductBySlug(slug);
+    const product = await productService.incrementProductViews(slug);
     if (!product) return res.status(404).json({ EC: 1, EM: "Không tìm thấy sản phẩm" });
     
-    // === SỬA Ở ĐÂY ===
     const similar = await productService.getSimilarProducts(product.category, product._id, 6);
     
     return res.status(200).json({ EC: 0, DT: { product, similar } });
@@ -76,11 +75,38 @@ const getCategories = async (req, res) => {
   }
 };
 
+const parseListOptions = (req) => ({
+  page: parseInt(req.query.page, 10) || 1,
+  limit: parseInt(req.query.limit, 10) || 10,
+});
+
+const getTopSelling = async (req, res) => {
+  try {
+    const data = await productService.getTopSellingProducts(parseListOptions(req));
+    return res.status(200).json({ EC: 0, DT: data });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ EC: -1, EM: "Server error" });
+  }
+};
+
+const getMostViewed = async (req, res) => {
+  try {
+    const data = await productService.getMostViewedProducts(parseListOptions(req));
+    return res.status(200).json({ EC: 0, DT: data });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ EC: -1, EM: "Server error" });
+  }
+};
+
 module.exports = { 
   getProducts, 
   getProduct,
   getFeaturedProducts,
   getNewProducts,
   getHotProducts,
-  getCategories
+  getCategories,
+  getTopSelling,
+  getMostViewed,
 };

@@ -11,6 +11,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import Profile from './pages/Profile'
 import ProductDetail from './pages/ProductDetail'
 import Search from './pages/Search'
+import CategoryBrowse from './pages/CategoryBrowse'
 
 function PrivateRoute({ children }) {
   const { auth, loading } = useContext(AuthContext)
@@ -52,6 +53,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/category/:category" element={<CategoryBrowse />} />
           <Route path="/product/:slug" element={<ProductDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

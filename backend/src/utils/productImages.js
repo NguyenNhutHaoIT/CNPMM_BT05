@@ -1,34 +1,29 @@
-const fs = require('fs');
-const path = require('path');
+const { bufferToStoredImage, fetchImageBuffer } = require('./imageStorage');
 
-const UPLOADS_DIR = path.join(__dirname, '../../uploads/products');
-const API_BASE = process.env.API_URL || `http://localhost:${process.env.PORT || 8080}`;
-
+/** Metadata ảnh seed (URL nguồn sẽ được tải và lưu Buffer vào DB) */
 const img = (url, alt) => ({ url, alt });
 
-/**
- * Ưu tiên ảnh local trong uploads/products/{slug}/, không có thì dùng URL mẫu.
- */
-function resolveProductImages(slug, fallbackImages) {
-  const dir = path.join(UPLOADS_DIR, slug);
-  if (!fs.existsSync(dir)) return fallbackImages;
-
-  const files = fs
-    .readdirSync(dir)
-    .filter((f) => /\.(jpe?g|png|webp|gif)$/i.test(f))
-    .sort();
-
-  if (!files.length) return fallbackImages;
-
-  return files.map((file, index) =>
-    img(`${API_BASE}/uploads/products/${slug}/${file}`, `${slug} - ${index + 1}`)
-  );
+/** Tải danh sách ảnh từ URL và chuyển thành document lưu MongoDB */
+async function resolveProductImagesForDb(imageMetas) {
+  const stored = [];
+  for (const meta of imageMetas) {
+    try {
+      const { buffer, contentType } = await fetchImageBuffer(meta.url);
+      stored.push(bufferToStoredImage(buffer, contentType, meta.alt));
+    } catch (err) {
+      console.warn('Skip image:', meta.url, err.message);
+    }
+  }
+  return stored;
 }
 
-function withAvatar(product) {
-  const images = product.images || [];
-  const avatar = product.avatar || images[0]?.url || '';
-  return { ...product, images, avatar };
+async function prepareProductForSeed(product) {
+  const images = await resolveProductImagesForDb(product.images || []);
+  return { ...product, images, avatar: '' };
 }
 
-module.exports = { img, resolveProductImages, withAvatar, UPLOADS_DIR };
+module.exports = {
+  img,
+  resolveProductImagesForDb,
+  prepareProductForSeed,
+};

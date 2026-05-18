@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import UserAvatar from './UserAvatar';
 
 function SearchIcon() {
   return (
@@ -135,16 +136,10 @@ export default function Header() {
                 <button
                   type="button"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center justify-center rounded-full text-sm font-bold"
-                  style={{
-                    width: 36,
-                    height: 36,
-                    background: 'var(--accent-light)',
-                    border: '1.5px solid var(--accent)',
-                    color: 'var(--accent)',
-                  }}
+                  className="header-user-avatar-btn"
+                  aria-label="Menu tài khoản"
                 >
-                  {auth.user?.name?.[0]?.toUpperCase() || 'U'}
+                  <UserAvatar user={auth.user} size={36} ring />
                 </button>
 
                 {userMenuOpen && (

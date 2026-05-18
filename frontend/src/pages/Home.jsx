@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from '../api/axios';
 import ProductCard from '../components/ProductCard';
+import ProductCarousel from '../components/product/ProductCarousel';
 import { AuthContext } from '../context/AuthContext';
 
 const CATEGORY_ICONS = {
@@ -132,7 +133,7 @@ export default function Home() {
               <button type="button" className="hero-btn-primary" onClick={() => nav('/search')}>
                 {slide.ctaPrimary}
               </button>
-              <button type="button" className="hero-btn-ghost" onClick={() => nav('/search?isHot=true')}>
+              <button type="button" className="hero-btn-ghost" onClick={() => nav('/search?sort=-sold')}>
                 {slide.ctaSecondary}
               </button>
             </div>
@@ -172,7 +173,7 @@ export default function Home() {
             <button
               key={cat}
               type="button"
-              onClick={() => nav(`/search?category=${encodeURIComponent(cat)}`)}
+              onClick={() => nav(`/category/${encodeURIComponent(cat)}`)}
               className="flex items-center gap-2 px-5 py-2 rounded-full bg-white text-sm font-medium flex-shrink-0 transition-all border border-[var(--sand-2)] text-[var(--ink-2)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
             >
               <span>{CATEGORY_ICONS[cat] || '👟'}</span>
@@ -238,7 +239,7 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-16">
           {[
             { icon: '✨', title: 'Hàng Mới Về', sub: 'Cập nhật hàng tuần', bg: 'var(--accent-light)', color: 'var(--accent)', q: '?isNew=true' },
-            { icon: '▲', title: 'Bán Chạy Nhất', sub: 'Được khách yêu thích', bg: 'var(--sand)', color: 'var(--ink-2)', q: '?isHot=true' },
+            { icon: '▲', title: 'Bán Chạy Nhất', sub: 'Được khách yêu thích', bg: 'var(--sand)', color: 'var(--ink-2)', q: '?sort=-sold' },
             { icon: '◆', title: 'Đang Khuyến Mãi', sub: 'Giảm đến 40%', bg: '#eef3ef', color: 'var(--success)', q: '?isPromotion=true' },
           ].map((card) => (
             <button
@@ -254,6 +255,24 @@ export default function Home() {
             </button>
           ))}
         </div>
+
+        <section className="mb-16">
+          <SectionHeader
+            label="▲ TOP 10"
+            title="Bán Chạy Nhất"
+            onViewAll={() => nav('/search?sort=-sold')}
+          />
+          <ProductCarousel apiPath="/products/top-selling" limit={10} />
+        </section>
+
+        <section className="mb-16">
+          <SectionHeader
+            label="👁 TRENDING"
+            title="Xem Nhiều Nhất"
+            onViewAll={() => nav('/search?sort=-views')}
+          />
+          <ProductCarousel apiPath="/products/most-viewed" limit={10} showViews />
+        </section>
 
         {promoProducts.length > 0 && (
           <section className="mb-16">

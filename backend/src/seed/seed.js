@@ -3,7 +3,7 @@ const connection = require('../config/database');
 const Product = require('../models/product');
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
-const { img, resolveProductImages, withAvatar } = require('../utils/productImages');
+const { img, prepareProductForSeed } = require('../utils/productImages');
 
 const saltRounds = 10;
 
@@ -18,6 +18,7 @@ const products = [
     discount: 25,
     stock: 50,
     sold: 156,
+    views: 2840,
     category: 'Sneaker',
     images: [
       img('https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800&q=80', 'Giày sneaker trắng - mặt trước'),
@@ -42,6 +43,7 @@ const products = [
     discount: 25,
     stock: 45,
     sold: 203,
+    views: 3520,
     category: 'Thể thao',
     images: [
       img('https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80', 'Giày thể thao đỏ đen'),
@@ -65,6 +67,7 @@ const products = [
     discount: 22,
     stock: 60,
     sold: 89,
+    views: 1120,
     category: 'Casual',
     images: [
       img('https://images.unsplash.com/photo-1533867617851-d662f5748deb?w=800&q=80', 'Giày lười nâu'),
@@ -87,6 +90,7 @@ const products = [
     discount: 33,
     stock: 25,
     sold: 67,
+    views: 980,
     category: 'Boots',
     images: [
       img('https://images.unsplash.com/photo-1608256246200-53e635b5b65f?w=800&q=80', 'Giày boots đen'),
@@ -110,6 +114,7 @@ const products = [
     discount: 33,
     stock: 80,
     sold: 456,
+    views: 5890,
     category: 'Sandal',
     images: [
       img('https://images.unsplash.com/photo-1603487742131-4160ec999806?w=800&q=80', 'Sandal hè'),
@@ -132,6 +137,7 @@ const products = [
     discount: 27,
     stock: 38,
     sold: 123,
+    views: 2100,
     category: 'Sneaker',
     images: [
       img('https://images.unsplash.com/photo-1525966222131-fdaf967bf329?w=800&q=80', 'Giày cổ cao đỏ'),
@@ -156,6 +162,7 @@ const products = [
     discount: 19,
     stock: 32,
     sold: 278,
+    views: 4210,
     category: 'Thể thao',
     images: [
       img('https://images.unsplash.com/photo-1578885117442-32f5a41ed1b0?w=800&q=80', 'Giày chạy bộ'),
@@ -180,6 +187,7 @@ const products = [
     discount: 21,
     stock: 28,
     sold: 94,
+    views: 1560,
     category: 'Công sở',
     images: [
       img('https://images.unsplash.com/photo-1614252238956-18c8724873f1?w=800&q=80', 'Giày da đen'),
@@ -203,6 +211,7 @@ const products = [
     discount: 19,
     stock: 55,
     sold: 167,
+    views: 1890,
     category: 'Sneaker',
     images: [
       img('https://images.unsplash.com/photo-1595341888016-a392ef81b300?w=800&q=80', 'Giày platform trắng'),
@@ -225,6 +234,7 @@ const products = [
     discount: 20,
     stock: 0,
     sold: 312,
+    views: 3100,
     category: 'Casual',
     images: [
       img('https://images.unsplash.com/photo-1525966222131-fdaf967bf329?w=800&q=80', 'Slip-on xám'),
@@ -261,15 +271,14 @@ const seed = async () => {
     console.log('   Password: 123456');
     console.log('   Vai trò: Member');
 
-    const seeded = products.map((p) =>
-      withAvatar({
-        ...p,
-        images: resolveProductImages(p.slug, p.images),
-      })
-    );
+    console.log('⏳ Đang tải ảnh sản phẩm vào database...');
+    const seeded = [];
+    for (const p of products) {
+      seeded.push(await prepareProductForSeed(p));
+    }
 
     await Product.insertMany(seeded);
-    console.log(`✅ Đã tạo ${seeded.length} sản phẩm giày dép (có avatar + ảnh trong DB)`);
+    console.log(`✅ Đã tạo ${seeded.length} sản phẩm (ảnh lưu binary trong MongoDB)`);
 
     process.exit(0);
   } catch (err) {

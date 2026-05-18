@@ -1,5 +1,15 @@
 const uploadService = require('../services/uploadService');
 
+const handleMulterError = (err, res) => {
+  if (err?.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ EC: 1, EM: 'Ảnh vượt quá dung lượng cho phép (tối đa 2MB)' });
+  }
+  if (err?.message) {
+    return res.status(400).json({ EC: 1, EM: err.message });
+  }
+  return res.status(500).json({ EC: -1, EM: 'Lỗi upload' });
+};
+
 // Upload ảnh sản phẩm
 const uploadProductImages = async (req, res) => {
   try {
@@ -53,7 +63,19 @@ const uploadAvatar = async (req, res) => {
   }
 };
 
+const deleteAvatar = async (req, res) => {
+  try {
+    const result = await uploadService.removeAvatar(req.user.id);
+    return res.status(result.EC === 0 ? 200 : 400).json(result);
+  } catch (err) {
+    console.error('Delete avatar error:', err);
+    return res.status(500).json({ EC: -1, EM: 'Lỗi server' });
+  }
+};
+
 module.exports = {
   uploadProductImages,
-  uploadAvatar
+  uploadAvatar,
+  deleteAvatar,
+  handleMulterError,
 };

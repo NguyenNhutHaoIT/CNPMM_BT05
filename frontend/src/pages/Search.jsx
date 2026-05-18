@@ -1,9 +1,19 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from '../api/axios';
 import ProductCard from '../components/ProductCard';
 
 const PER_PAGE = 12;
+
+const SORT_OPTIONS = [
+  { value: '-createdAt', label: 'Mới nhất' },
+  { value: 'createdAt', label: 'Cũ nhất' },
+  { value: 'price', label: 'Giá thấp → cao' },
+  { value: '-price', label: 'Giá cao → thấp' },
+  { value: '-sold', label: 'Bán chạy' },
+  { value: '-views', label: 'Xem nhiều' },
+  { value: '-rating', label: 'Đánh giá cao' },
+];
 
 function FilterSection({ title, children }) {
   return (
@@ -53,11 +63,10 @@ function readFiltersFromParams(searchParams) {
     isPromotion: searchParams.get('isPromotion') === 'true',
     isFeatured: searchParams.get('isFeatured') === 'true',
     sort: searchParams.get('sort') || '-createdAt',
-    page: Number(searchParams.get('page')) || 1,
   };
 }
 
-function buildParamsFromFilters(filters) {
+function buildUrlParams(filters) {
   const params = new URLSearchParams();
   if (filters.q) params.set('q', filters.q);
   if (filters.category) params.set('category', filters.category);
@@ -68,8 +77,13 @@ function buildParamsFromFilters(filters) {
   if (filters.isHot) params.set('isHot', 'true');
   if (filters.isPromotion) params.set('isPromotion', 'true');
   if (filters.isFeatured) params.set('isFeatured', 'true');
-  params.set('sort', filters.sort);
-  params.set('page', String(filters.page));
+  if (filters.sort && filters.sort !== '-createdAt') params.set('sort', filters.sort);
+  return params;
+}
+
+function buildApiParams(filters, page) {
+  const params = buildUrlParams(filters);
+  params.set('page', String(page));
   params.set('limit', String(PER_PAGE));
   return params;
 }
@@ -77,11 +91,20 @@ function buildParamsFromFilters(filters) {
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
-
+  const [loadingMore, setLoadingMore] = useState(false);
   const [draft, setDraft] = useState(() => readFiltersFromParams(searchParams));
+
+  const sentinelRef = useRef(null);
+  const fetchingMoreRef = useRef(false);
+
+  const filters = readFiltersFromParams(searchParams);
+  const filterKey = searchParams.toString();
+  const hasMore = products.length < total;
+  const sortLabel = SORT_OPTIONS.find((o) => o.value === filters.sort)?.label || 'Mới nhất';
 
   useEffect(() => {
     setDraft(readFiltersFromParams(searchParams));
@@ -99,40 +122,92 @@ export default function Search() {
     fetchCategories();
   }, []);
 
-  const fetchProducts = useCallback(async () => {
-    try {
-      setLoading(true);
-      const apiParams = buildParamsFromFilters(readFiltersFromParams(searchParams));
-      const res = await axios.get(`/products?${apiParams}`);
-      if (res.EC === 0) {
-        setProducts(res.DT.items || []);
-        setTotal(res.DT.total || 0);
+  const fetchPage = useCallback(
+    async (pageNum, append = false) => {
+      try {
+        if (append) setLoadingMore(true);
+        else setLoading(true);
+
+        const currentFilters = readFiltersFromParams(searchParams);
+        const res = await axios.get(`/products?${buildApiParams(currentFilters, pageNum)}`);
+        if (res.EC === 0) {
+          const batch = res.DT?.items || [];
+          setTotal(res.DT?.total || 0);
+          setProducts((prev) => (append ? [...prev, ...batch] : batch));
+          setPage(pageNum);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [searchParams]);
+    },
+    [searchParams]
+  );
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    setProducts([]);
+    setPage(1);
+    setTotal(0);
+    fetchPage(1, false);
+  }, [filterKey, fetchPage]);
 
-  const applyFilters = (overrides = {}, resetPage = true) => {
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasMore || loading || loadingMore) return undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !fetchingMoreRef.current) {
+          fetchingMoreRef.current = true;
+          fetchPage(page + 1, true).finally(() => {
+            fetchingMoreRef.current = false;
+          });
+        }
+      },
+      { rootMargin: '240px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [fetchPage, hasMore, loading, loadingMore, page]);
+
+  const applyFilters = (overrides = {}) => {
     const next = { ...readFiltersFromParams(searchParams), ...draft, ...overrides };
-    if (resetPage) next.page = 1;
-    setSearchParams(buildParamsFromFilters(next), { replace: true });
+    setSearchParams(buildUrlParams(next), { replace: true });
+  };
+
+  const applySort = (sort) => {
+    applyFilters({ sort });
   };
 
   const handleReset = () => {
-    setSearchParams(new URLSearchParams({ sort: '-createdAt', page: '1', limit: String(PER_PAGE) }), {
-      replace: true,
+    setSearchParams(new URLSearchParams(), { replace: true });
+    setDraft({
+      q: '',
+      category: '',
+      priceMin: '',
+      priceMax: '',
+      inStock: false,
+      isNew: false,
+      isHot: false,
+      isPromotion: false,
+      isFeatured: false,
+      sort: '-createdAt',
     });
   };
 
-  const filters = readFiltersFromParams(searchParams);
-  const totalPages = Math.ceil(total / PER_PAGE) || 1;
+  const activeFilterCount = [
+    filters.q,
+    filters.category,
+    filters.priceMin,
+    filters.priceMax,
+    filters.inStock,
+    filters.isNew,
+    filters.isHot,
+    filters.isPromotion,
+    filters.isFeatured,
+  ].filter(Boolean).length;
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
@@ -141,7 +216,19 @@ export default function Search() {
           {filters.q ? `Kết quả cho "${filters.q}"` : 'Cửa hàng giày dép'}
         </h1>
         <p className="text-sm mt-1" style={{ color: 'var(--ink-3)' }}>
-          Tìm thấy <strong style={{ color: 'var(--ink)' }}>{total}</strong> sản phẩm
+          {loading && products.length === 0 ? (
+            'Đang tải sản phẩm...'
+          ) : (
+            <>
+              Tìm thấy <strong style={{ color: 'var(--ink)' }}>{total}</strong> sản phẩm
+              {products.length > 0 && products.length < total && (
+                <>
+                  {' '}
+                  · Đã hiển thị <strong style={{ color: 'var(--ink)' }}>{products.length}</strong>
+                </>
+              )}
+            </>
+          )}
         </p>
       </div>
 
@@ -154,6 +241,9 @@ export default function Search() {
             <div className="flex justify-between items-center mb-7">
               <h3 className="text-base font-bold" style={{ color: 'var(--ink)' }}>
                 Bộ lọc
+                {activeFilterCount > 0 && (
+                  <span className="search-filter-badge">{activeFilterCount}</span>
+                )}
               </h3>
               <button
                 type="button"
@@ -240,21 +330,6 @@ export default function Search() {
               </div>
             </FilterSection>
 
-            <FilterSection title="Sắp xếp">
-              <select
-                className="form-input"
-                value={draft.sort}
-                onChange={(e) => applyFilters({ sort: e.target.value })}
-              >
-                <option value="-createdAt">Mới nhất</option>
-                <option value="createdAt">Cũ nhất</option>
-                <option value="price">Giá thấp → cao</option>
-                <option value="-price">Giá cao → thấp</option>
-                <option value="-sold">Bán chạy nhất</option>
-                <option value="-rating">Đánh giá cao</option>
-              </select>
-            </FilterSection>
-
             <button type="button" onClick={() => applyFilters()} className="btn-primary w-full py-3">
               Áp dụng bộ lọc
             </button>
@@ -262,16 +337,49 @@ export default function Search() {
         </aside>
 
         <div>
-          {loading ? (
+          <div className="search-toolbar">
+            <div className="search-toolbar__meta">
+              <span className="search-toolbar__label">Sắp xếp</span>
+              <span className="search-toolbar__active">{sortLabel}</span>
+            </div>
+            <div className="search-toolbar__sort" role="group" aria-label="Sắp xếp sản phẩm">
+              {SORT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => applySort(opt.value)}
+                  className={`search-sort-pill${filters.sort === opt.value ? ' search-sort-pill--active' : ''}`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {loading && products.length === 0 ? (
             <div className="flex justify-center py-20">
               <div className="spinner" />
             </div>
           ) : products.length > 0 ? (
-            <div className="grid-products">
-              {products.map((product) => (
-                <ProductCard key={product._id} product={product} />
-              ))}
-            </div>
+            <>
+              <div className="grid-products">
+                {products.map((product) => (
+                  <ProductCard key={product._id} product={product} />
+                ))}
+              </div>
+              <div ref={sentinelRef} className="h-2" aria-hidden />
+              {loadingMore && (
+                <div className="search-load-more">
+                  <div className="spinner" />
+                  <span>Đang tải thêm sản phẩm...</span>
+                </div>
+              )}
+              {!hasMore && (
+                <p className="search-end-message">
+                  Đã hiển thị tất cả {total} sản phẩm
+                </p>
+              )}
+            </>
           ) : (
             <div className="text-center py-20">
               <div className="text-5xl mb-4">🔍</div>
@@ -283,42 +391,6 @@ export default function Search() {
               </p>
               <button type="button" onClick={handleReset} className="btn-primary">
                 Xóa bộ lọc
-              </button>
-            </div>
-          )}
-
-          {totalPages > 1 && (
-            <div className="flex flex-wrap gap-2 justify-center mt-12">
-              <button
-                type="button"
-                className="btn-ghost px-5 py-2"
-                disabled={filters.page === 1}
-                onClick={() => applyFilters({ page: filters.page - 1 }, false)}
-              >
-                ← Trước
-              </button>
-              {Array.from({ length: Math.min(totalPages, 8) }, (_, i) => i + 1).map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => applyFilters({ page: n }, false)}
-                  className="w-10 h-10 rounded-xl text-sm font-medium transition-all"
-                  style={{
-                    background: n === filters.page ? 'var(--accent)' : '#fff',
-                    color: n === filters.page ? '#fff' : 'var(--ink-2)',
-                    border: `1px solid ${n === filters.page ? 'var(--accent)' : 'var(--sand-2)'}`,
-                  }}
-                >
-                  {n}
-                </button>
-              ))}
-              <button
-                type="button"
-                className="btn-ghost px-5 py-2"
-                disabled={filters.page >= totalPages}
-                onClick={() => applyFilters({ page: filters.page + 1 }, false)}
-              >
-                Sau →
               </button>
             </div>
           )}
