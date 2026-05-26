@@ -1,9 +1,17 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 
 const PROMO = '🚚 Miễn phí vận chuyển đơn giày từ 299K · ✨ Giảm đến 40% BST sneaker mùa hè';
 
 export default function TopBar() {
+  const { auth } = useContext(AuthContext);
+
+  // Hide TopBar for Staff and Admin
+  if (auth.isAuthenticated && auth.user?.role !== 'Customer') {
+    return null;
+  }
+
   return (
     <div className="top-bar">
       <div className="top-bar-inner">

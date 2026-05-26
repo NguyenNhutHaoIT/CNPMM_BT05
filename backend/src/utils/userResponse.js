@@ -15,7 +15,7 @@ const toPublicUser = (user) => {
     email: doc.email,
     avatar: hasAvatar ? userAvatarUrl(id) : doc.avatar || '',
     phone: doc.phone || '',
-    role: doc.role || 'Member',
+    role: doc.role || 'Customer',
     points: doc.points ?? 0,
     memberRank: doc.memberRank ?? 'Silver',
     shippingAddress: {

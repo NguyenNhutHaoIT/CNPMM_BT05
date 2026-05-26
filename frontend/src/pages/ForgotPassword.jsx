@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
 import axios from '../api/axios';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function ForgotPassword() {
+  const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const nav = useNavigate();
 
-  const submit = async (e) => {
+  const handleSendOTP = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -17,13 +22,43 @@ export default function ForgotPassword() {
     try {
       const res = await axios.post('/auth/forgot-password', { email });
       if (res.EC === 0) {
-        setSuccess('Chúng tôi đã gửi link khôi phục mật khẩu đến email của bạn!');
-        setEmail('');
+        setSuccess('Mã OTP đã được gửi đến email của bạn!');
+        setStep(2);
       } else {
         setError(res.EM || 'Gửi email thất bại');
       }
-    } catch {
-      setError('Lỗi kết nối. Vui lòng thử lại');
+    } catch (err) {
+      setError(err?.EM || 'Lỗi kết nối. Vui lòng thử lại');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    if (newPassword.length < 6) {
+      setError('Mật khẩu mới phải có ít nhất 6 ký tự');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await axios.post('/auth/reset-password', { 
+        email, 
+        otp, 
+        newPassword 
+      });
+      if (res.EC === 0) {
+        alert('Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay bây giờ.');
+        nav('/login');
+      } else {
+        setError(res.EM || 'Đặt lại mật khẩu thất bại');
+      }
+    } catch (err) {
+      setError(err?.EM || 'Lỗi kết nối. Vui lòng thử lại');
     } finally {
       setLoading(false);
     }
@@ -44,7 +79,9 @@ export default function ForgotPassword() {
             <h1 className="font-serif text-3xl font-bold mb-2" style={{ color: 'var(--ink)' }}>
               Quên mật khẩu?
             </h1>
-            <p className="text-sm" style={{ color: 'var(--ink-3)' }}>Nhập email để nhận link khôi phục</p>
+            <p className="text-sm" style={{ color: 'var(--ink-3)' }}>
+              {step === 1 ? 'Nhập email để nhận mã OTP' : 'Nhập mã OTP và mật khẩu mới'}
+            </p>
           </div>
 
           {error && (
@@ -55,7 +92,7 @@ export default function ForgotPassword() {
               {error}
             </div>
           )}
-          {success && (
+          {success && step === 2 && (
             <div
               className="mb-5 px-4 py-3 rounded-xl text-sm text-center"
               style={{ background: '#e8f5e9', color: '#1b5e20' }}
@@ -64,25 +101,59 @@ export default function ForgotPassword() {
             </div>
           )}
 
-          <form onSubmit={submit} className="space-y-4">
-            <input
-              type="email"
-              required
-              className="form-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Nhập email của bạn"
-            />
-            <button type="submit" disabled={loading} className="btn-primary w-full py-4">
-              {loading ? 'Đang gửi...' : 'Gửi link khôi phục'}
-            </button>
-          </form>
+          {step === 1 ? (
+            <form onSubmit={handleSendOTP} className="space-y-4">
+              <input
+                type="email"
+                required
+                className="form-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Nhập email của bạn"
+              />
+              <button type="submit" disabled={loading} className="btn-primary w-full py-4">
+                {loading ? 'Đang gửi...' : 'Gửi mã OTP'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <input
+                type="text"
+                required
+                maxLength={6}
+                className="form-input text-center text-2xl tracking-widest"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                placeholder="------"
+              />
+              <input
+                type="password"
+                required
+                className="form-input"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Mật khẩu mới (ít nhất 6 ký tự)"
+              />
+              <button type="submit" disabled={loading} className="btn-primary w-full py-4 mt-2">
+                {loading ? 'Đang xử lý...' : 'Đặt lại mật khẩu'}
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setStep(1)} 
+                className="w-full py-2 text-sm text-gray-500 hover:text-gray-800"
+              >
+                Quay lại
+              </button>
+            </form>
+          )}
 
-          <p className="text-center mt-8 text-sm" style={{ color: 'var(--ink-3)' }}>
-            <Link to="/login" className="font-semibold" style={{ color: 'var(--accent)' }}>
-              ← Quay lại đăng nhập
-            </Link>
-          </p>
+          {step === 1 && (
+            <p className="text-center mt-8 text-sm" style={{ color: 'var(--ink-3)' }}>
+              <Link to="/login" className="font-semibold" style={{ color: 'var(--accent)' }}>
+                ← Quay lại đăng nhập
+              </Link>
+            </p>
+          )}
         </div>
       </div>
     </div>

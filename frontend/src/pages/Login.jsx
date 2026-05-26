@@ -24,18 +24,19 @@ export default function Login() {
       const res = await axios.post('/auth/login', form);
       if (res.EC === 0) {
         const role = (res.DT.user?.role || '').toLowerCase();
-        if (role !== 'member') {
-          setError('Tài khoản không có quyền thành viên. Vui lòng liên hệ quản trị.');
+        if (!['customer', 'staff', 'admin'].includes(role)) {
+          setError('Tài khoản không có quyền truy cập. Vui lòng liên hệ quản trị.');
           return;
         }
         localStorage.setItem('access_token', res.DT.access_token);
         setAuth({ isAuthenticated: true, user: mapUserToAuth(res.DT.user) });
-        nav('/', { replace: true });
+        const redirectPath = res.DT.redirectUrl || '/';
+        nav(redirectPath, { replace: true });
       } else {
         setError(res.EM || 'Email hoặc mật khẩu không đúng');
       }
-    } catch {
-      setError('Lỗi kết nối. Vui lòng thử lại');
+    } catch (err) {
+      setError(err?.EM || 'Lỗi kết nối. Vui lòng thử lại');
     } finally {
       setLoading(false);
     }

@@ -307,15 +307,17 @@ export default function Profile() {
             <p className="text-sm mt-1" style={{ color: 'var(--ink-3)' }}>
               {displayUser?.email}
             </p>
-            <div className="profile-badges">
-              <span className="profile-badge">{displayUser?.role || 'Member'}</span>
-              <span className="profile-badge profile-badge--gold">
-                {displayUser?.memberRank || 'Silver'}
-              </span>
-              <span className="profile-badge">
-                {(displayUser?.points || 0).toLocaleString('vi-VN')} điểm
-              </span>
-            </div>
+            {displayUser?.role === 'Customer' && (
+              <div className="profile-badges">
+                <span className="profile-badge">{displayUser?.role || 'Member'}</span>
+                <span className="profile-badge profile-badge--gold">
+                  {displayUser?.memberRank || 'Silver'}
+                </span>
+                <span className="profile-badge">
+                  {(displayUser?.points || 0).toLocaleString('vi-VN')} điểm
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="profile-header-actions">
@@ -375,74 +377,76 @@ export default function Profile() {
                 </div>
               </section>
 
-              <section className="profile-form-section">
-                <h2 className="profile-form-section__title">Địa chỉ giao hàng mặc định</h2>
-                <p className="profile-form-section__desc">
-                  Điền đầy đủ để thanh toán nhanh hơn ở lần mua sau (có thể bỏ trống nếu chưa cần).
-                </p>
-                <div className="profile-form-grid">
-                  <FormField
-                    label="Tên người nhận"
-                    error={fieldErrors['shippingAddress.recipientName']}
-                  >
-                    <input
-                      type="text"
-                      className={`form-input${fieldErrors['shippingAddress.recipientName'] ? ' form-input--error' : ''}`}
-                      value={form.shippingAddress.recipientName}
-                      onChange={(e) => updateAddress({ recipientName: e.target.value })}
-                      placeholder="Họ tên người nhận"
-                    />
-                  </FormField>
-                  <FormField label="SĐT người nhận" error={fieldErrors['shippingAddress.phone']}>
-                    <input
-                      type="tel"
-                      className={`form-input${fieldErrors['shippingAddress.phone'] ? ' form-input--error' : ''}`}
-                      value={form.shippingAddress.phone}
-                      onChange={(e) => updateAddress({ phone: e.target.value })}
-                      placeholder="0901234567"
-                    />
-                  </FormField>
-                  <FormField label="Tỉnh / Thành phố" error={fieldErrors['shippingAddress.province']}>
-                    <input
-                      type="text"
-                      className={`form-input${fieldErrors['shippingAddress.province'] ? ' form-input--error' : ''}`}
-                      value={form.shippingAddress.province}
-                      onChange={(e) => updateAddress({ province: e.target.value })}
-                      placeholder="VD: TP. Hồ Chí Minh"
-                    />
-                  </FormField>
-                  <FormField label="Quận / Huyện" error={fieldErrors['shippingAddress.district']}>
-                    <input
-                      type="text"
-                      className={`form-input${fieldErrors['shippingAddress.district'] ? ' form-input--error' : ''}`}
-                      value={form.shippingAddress.district}
-                      onChange={(e) => updateAddress({ district: e.target.value })}
-                      placeholder="VD: Quận 1"
-                    />
-                  </FormField>
-                  <FormField label="Phường / Xã" error={fieldErrors['shippingAddress.ward']}>
-                    <input
-                      type="text"
-                      className={`form-input${fieldErrors['shippingAddress.ward'] ? ' form-input--error' : ''}`}
-                      value={form.shippingAddress.ward}
-                      onChange={(e) => updateAddress({ ward: e.target.value })}
-                      placeholder="VD: Phường Bến Nghé"
-                    />
-                  </FormField>
-                  <FormField
-                    label="Địa chỉ chi tiết"
-                    error={fieldErrors['shippingAddress.street']}
-                  >
-                    <input
-                      type="text"
-                      className={`form-input${fieldErrors['shippingAddress.street'] ? ' form-input--error' : ''}`}
-                      value={form.shippingAddress.street}
-                      onChange={(e) => updateAddress({ street: e.target.value })}
-                      placeholder="Số nhà, tên đường..."
-                    />
-                  </FormField>
-                </div>
-              </section>
+              {displayUser?.role === 'Customer' && (
+                <section className="profile-form-section">
+                  <h2 className="profile-form-section__title">Địa chỉ giao hàng mặc định</h2>
+                  <p className="profile-form-section__desc">
+                    Điền đầy đủ để thanh toán nhanh hơn ở lần mua sau (có thể bỏ trống nếu chưa cần).
+                  </p>
+                  <div className="profile-form-grid">
+                    <FormField
+                      label="Tên người nhận"
+                      error={fieldErrors['shippingAddress.recipientName']}
+                    >
+                      <input
+                        type="text"
+                        className={`form-input${fieldErrors['shippingAddress.recipientName'] ? ' form-input--error' : ''}`}
+                        value={form.shippingAddress.recipientName}
+                        onChange={(e) => updateAddress({ recipientName: e.target.value })}
+                        placeholder="Họ tên người nhận"
+                      />
+                    </FormField>
+                    <FormField label="SĐT người nhận" error={fieldErrors['shippingAddress.phone']}>
+                      <input
+                        type="tel"
+                        className={`form-input${fieldErrors['shippingAddress.phone'] ? ' form-input--error' : ''}`}
+                        value={form.shippingAddress.phone}
+                        onChange={(e) => updateAddress({ phone: e.target.value })}
+                        placeholder="0901234567"
+                      />
+                    </FormField>
+                    <FormField label="Tỉnh / Thành phố" error={fieldErrors['shippingAddress.province']}>
+                      <input
+                        type="text"
+                        className={`form-input${fieldErrors['shippingAddress.province'] ? ' form-input--error' : ''}`}
+                        value={form.shippingAddress.province}
+                        onChange={(e) => updateAddress({ province: e.target.value })}
+                        placeholder="VD: TP. Hồ Chí Minh"
+                      />
+                    </FormField>
+                    <FormField label="Quận / Huyện" error={fieldErrors['shippingAddress.district']}>
+                      <input
+                        type="text"
+                        className={`form-input${fieldErrors['shippingAddress.district'] ? ' form-input--error' : ''}`}
+                        value={form.shippingAddress.district}
+                        onChange={(e) => updateAddress({ district: e.target.value })}
+                        placeholder="VD: Quận 1"
+                      />
+                    </FormField>
+                    <FormField label="Phường / Xã" error={fieldErrors['shippingAddress.ward']}>
+                      <input
+                        type="text"
+                        className={`form-input${fieldErrors['shippingAddress.ward'] ? ' form-input--error' : ''}`}
+                        value={form.shippingAddress.ward}
+                        onChange={(e) => updateAddress({ ward: e.target.value })}
+                        placeholder="VD: Phường Bến Nghé"
+                      />
+                    </FormField>
+                    <FormField
+                      label="Địa chỉ chi tiết"
+                      error={fieldErrors['shippingAddress.street']}
+                    >
+                      <input
+                        type="text"
+                        className={`form-input${fieldErrors['shippingAddress.street'] ? ' form-input--error' : ''}`}
+                        value={form.shippingAddress.street}
+                        onChange={(e) => updateAddress({ street: e.target.value })}
+                        placeholder="Số nhà, tên đường..."
+                      />
+                    </FormField>
+                  </div>
+                </section>
+              )}
 
               <section className="profile-form-section profile-form-section--security">
                 <label className="profile-checkbox-row">
@@ -525,46 +529,50 @@ export default function Profile() {
                 />
               </div>
 
-              <div className="profile-info-panel">
-                <h3 className="profile-panel-title">Địa chỉ giao hàng</h3>
-                {formatShippingAddress(displayUser?.shippingAddress) !== '—' ? (
-                  <>
-                    <ReadOnlyField
-                      label="Người nhận"
-                      value={displayUser?.shippingAddress?.recipientName}
-                    />
-                    <ReadOnlyField
-                      label="SĐT nhận hàng"
-                      value={displayUser?.shippingAddress?.phone}
-                    />
-                    <ReadOnlyField
-                      label="Địa chỉ"
-                      value={formatShippingAddress(displayUser?.shippingAddress)}
-                    />
-                  </>
-                ) : (
-                  <p className="profile-empty-hint">
-                    Chưa có địa chỉ mặc định. Bấm «Chỉnh sửa hồ sơ» để thêm địa chỉ giao hàng.
-                  </p>
-                )}
-              </div>
+              {displayUser?.role === 'Customer' && (
+                <>
+                  <div className="profile-info-panel">
+                    <h3 className="profile-panel-title">Địa chỉ giao hàng</h3>
+                    {formatShippingAddress(displayUser?.shippingAddress) !== '—' ? (
+                      <>
+                        <ReadOnlyField
+                          label="Người nhận"
+                          value={displayUser?.shippingAddress?.recipientName}
+                        />
+                        <ReadOnlyField
+                          label="SĐT nhận hàng"
+                          value={displayUser?.shippingAddress?.phone}
+                        />
+                        <ReadOnlyField
+                          label="Địa chỉ"
+                          value={formatShippingAddress(displayUser?.shippingAddress)}
+                        />
+                      </>
+                    ) : (
+                      <p className="profile-empty-hint">
+                        Chưa có địa chỉ mặc định. Bấm «Chỉnh sửa hồ sơ» để thêm địa chỉ giao hàng.
+                      </p>
+                    )}
+                  </div>
 
-              <div className="profile-info-panel">
-                <h3 className="profile-panel-title">Thành viên & ưu đãi</h3>
-                <ReadOnlyField
-                  label="Điểm tích lũy"
-                  value={(displayUser?.points || 0).toLocaleString('vi-VN')}
-                />
-                <ReadOnlyField label="Hạng thành viên" value={displayUser?.memberRank} />
-                <ReadOnlyField
-                  label="Ngày tham gia"
-                  value={
-                    displayUser?.createdAt
-                      ? new Date(displayUser.createdAt).toLocaleDateString('vi-VN')
-                      : '—'
-                  }
-                />
-              </div>
+                  <div className="profile-info-panel">
+                    <h3 className="profile-panel-title">Thành viên & ưu đãi</h3>
+                    <ReadOnlyField
+                      label="Điểm tích lũy"
+                      value={(displayUser?.points || 0).toLocaleString('vi-VN')}
+                    />
+                    <ReadOnlyField label="Hạng thành viên" value={displayUser?.memberRank} />
+                    <ReadOnlyField
+                      label="Ngày tham gia"
+                      value={
+                        displayUser?.createdAt
+                          ? new Date(displayUser.createdAt).toLocaleDateString('vi-VN')
+                          : '—'
+                      }
+                    />
+                  </div>
+                </>
+              )}
             </div>
           )}
 

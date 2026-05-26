@@ -1,11 +1,22 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 import { productAvatar, resolveImageUrl } from '../utils/imageUrl';
 
 export default function ProductCard({ product, showViews = false, compact = false }) {
   const [hovered, setHovered] = useState(false);
+  const { auth } = useContext(AuthContext);
+  const navigate = useNavigate();
   const discount = product.discount || 0;
   const inStock = product.stock > 0;
+
+  const showAddToCart = !auth.isAuthenticated || auth.user?.role === 'Customer';
+
+  const handleQuickAdd = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/product/${product.slug}`);
+  };
 
   return (
     <Link
@@ -107,17 +118,19 @@ export default function ProductCard({ product, showViews = false, compact = fals
             )}
           </div>
 
-          <button
-            type="button"
-            className="w-full py-2 rounded-xl text-sm font-semibold transition-all duration-200"
-            style={{
-              background: hovered ? 'var(--accent)' : 'var(--accent-light)',
-              color: hovered ? '#fff' : 'var(--accent)',
-            }}
-            onClick={(e) => e.preventDefault()}
-          >
-            Thêm vào giỏ
-          </button>
+          {showAddToCart && (
+            <button
+              type="button"
+              className="w-full py-2 rounded-xl text-sm font-semibold transition-all duration-200"
+              style={{
+                background: hovered ? 'var(--accent)' : 'var(--accent-light)',
+                color: hovered ? '#fff' : 'var(--accent)',
+              }}
+              onClick={handleQuickAdd}
+            >
+              Thêm vào giỏ
+            </button>
+          )}
         </div>
       </div>
     </Link>

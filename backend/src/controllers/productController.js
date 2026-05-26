@@ -100,6 +100,46 @@ const getMostViewed = async (req, res) => {
   }
 };
 
+const createProduct = async (req, res) => {
+  try {
+    const data = req.body;
+    // Generate slug from title if not provided
+    if (!data.slug && data.title) {
+      data.slug = data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now();
+    }
+    const product = await productService.createProduct(data);
+    return res.status(200).json({ EC: 0, DT: product, EM: 'Tạo sản phẩm thành công' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ EC: -1, EM: "Lỗi khi tạo sản phẩm" });
+  }
+};
+
+const updateProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = req.body;
+    const product = await productService.updateProduct(id, data);
+    if (!product) return res.status(404).json({ EC: 1, EM: "Không tìm thấy sản phẩm" });
+    return res.status(200).json({ EC: 0, DT: product, EM: 'Cập nhật sản phẩm thành công' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ EC: -1, EM: "Lỗi khi cập nhật sản phẩm" });
+  }
+};
+
+const deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await productService.deleteProduct(id);
+    if (!result) return res.status(404).json({ EC: 1, EM: "Không tìm thấy sản phẩm" });
+    return res.status(200).json({ EC: 0, EM: 'Xóa sản phẩm thành công' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ EC: -1, EM: "Lỗi khi xóa sản phẩm" });
+  }
+};
+
 module.exports = { 
   getProducts, 
   getProduct,
@@ -109,4 +149,7 @@ module.exports = {
   getCategories,
   getTopSelling,
   getMostViewed,
+  createProduct,
+  updateProduct,
+  deleteProduct
 };

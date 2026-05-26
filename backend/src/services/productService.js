@@ -108,6 +108,20 @@ const incrementProductViews = async (slug) => {
   return normalizeProduct(product);
 };
 
+const createProduct = async (data) => {
+  const product = await Product.create(data);
+  return product;
+};
+
+const updateProduct = async (id, data) => {
+  const product = await Product.findByIdAndUpdate(id, data, { new: true });
+  return product;
+};
+
+const deleteProduct = async (id) => {
+  return await Product.findByIdAndDelete(id);
+};
+
 module.exports = {
   listProducts,
   getProductBySlug,
@@ -119,4 +133,7 @@ module.exports = {
   getTopSellingProducts,
   getMostViewedProducts,
   incrementProductViews,
+  createProduct,
+  updateProduct,
+  deleteProduct
 };

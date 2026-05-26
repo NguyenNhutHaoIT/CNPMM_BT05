@@ -21,6 +21,8 @@ const productSchema = new mongoose.Schema({
   sold: { type: Number, default: 0 },
   views: { type: Number, default: 0 },
   category: { type: String, required: true },
+  sizes: { type: [String], default: [] },
+  colors: { type: [String], default: [] },
   /** URL API phục vụ ảnh từ DB — gán khi trả JSON */
   avatar: { type: String, default: '' },
   images: [imageSchema],

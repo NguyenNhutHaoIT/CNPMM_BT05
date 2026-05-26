@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useEffect, useState, useContext } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+import { CartContext } from '../context/CartContext';
 import axios from '../api/axios';
 import ProductCard from '../components/ProductCard';
 import ProductSwiper from '../components/product/ProductSwiper';
@@ -25,12 +27,17 @@ function StarRating({ value }) {
 
 export default function ProductDetail() {
   const { slug } = useParams();
+  const navigate = useNavigate();
+  const { auth } = useContext(AuthContext);
+  const { addToCart } = useContext(CartContext);
   const [product, setProduct] = useState(null);
   const [similar, setSimilar] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [addedToCart, setAddedToCart] = useState(false);
+  const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -39,9 +46,12 @@ export default function ProductDetail() {
         setError('');
         const res = await axios.get(`/products/${slug}`);
         if (res.EC === 0) {
-          setProduct(res.DT.product);
+          const prod = res.DT.product;
+          setProduct(prod);
           setSimilar(res.DT.similar || []);
           setQuantity(1);
+          if (prod.sizes && prod.sizes.length > 0) setSelectedSize(prod.sizes[0]);
+          if (prod.colors && prod.colors.length > 0) setSelectedColor(prod.colors[0]);
         } else {
           setError(res.EM || 'Không tìm thấy sản phẩm');
         }
@@ -56,25 +66,24 @@ export default function ProductDetail() {
     window.scrollTo(0, 0);
   }, [slug]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!product?.stock) return;
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    const idx = cart.findIndex((i) => i.slug === product.slug);
-    const item = {
-      slug: product.slug,
-      title: product.title,
-      price: product.price,
-      image: productAvatar(product),
-      quantity,
-    };
-    if (idx >= 0) {
-      cart[idx].quantity = Math.min(product.stock, cart[idx].quantity + quantity);
-    } else {
-      cart.push(item);
+    if (!auth.isAuthenticated) {
+      alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.');
+      navigate('/login');
+      return;
     }
-    localStorage.setItem('cart', JSON.stringify(cart));
-    setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2500);
+    if (!selectedSize || !selectedColor) {
+      alert('Vui lòng chọn Size và Màu sắc.');
+      return;
+    }
+    try {
+      await addToCart(product._id, selectedSize, selectedColor, quantity);
+      setAddedToCart(true);
+      setTimeout(() => setAddedToCart(false), 2500);
+    } catch (err) {
+      alert(err.message || 'Lỗi thêm vào giỏ hàng');
+    }
   };
 
   if (loading) {
@@ -230,36 +239,91 @@ export default function ProductDetail() {
 
           <StockStatus stock={product.stock} />
 
-          <div>
-            <p className="text-sm font-semibold mb-3 m-0" style={{ color: 'var(--ink-2)' }}>
-              Số lượng mua
-            </p>
-            <QuantityStepper
-              value={quantity}
-              max={Math.max(product.stock, 1)}
-              disabled={!inStock}
-              onChange={setQuantity}
-            />
-          </div>
+          {(!auth.isAuthenticated || auth.user?.role === 'Customer') && (
+            <>
+              {product.sizes?.length > 0 && (
+                <div className="mb-2">
+                  <p className="text-sm font-semibold mb-2 m-0" style={{ color: 'var(--ink-2)' }}>
+                    Chọn Size:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {product.sizes.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setSelectedSize(s)}
+                        className="w-10 h-10 flex items-center justify-center rounded-lg border text-sm font-bold transition-all"
+                        style={{
+                          backgroundColor: selectedSize === s ? 'var(--accent)' : '#fff',
+                          color: selectedSize === s ? '#fff' : 'var(--ink-2)',
+                          borderColor: selectedSize === s ? 'var(--accent)' : 'var(--sand-3)',
+                        }}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              disabled={!inStock}
-              className="btn-primary flex-1 py-4"
-              style={{ background: addedToCart ? 'var(--success)' : undefined }}
-            >
-              {addedToCart
-                ? `✓ Đã thêm ${quantity} vào giỏ`
-                : inStock
-                  ? `🛒 Thêm ${quantity} vào giỏ hàng`
-                  : 'Hết hàng'}
-            </button>
-            <button type="button" className="btn-ghost px-5 text-xl" title="Yêu thích" aria-label="Yêu thích">
-              ♡
-            </button>
-          </div>
+              {product.colors?.length > 0 && (
+                <div className="mb-2">
+                  <p className="text-sm font-semibold mb-2 m-0" style={{ color: 'var(--ink-2)' }}>
+                    Chọn Màu Sắc:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {product.colors.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setSelectedColor(c)}
+                        className="px-4 py-2 flex items-center justify-center rounded-lg border text-sm font-medium transition-all"
+                        style={{
+                          backgroundColor: selectedColor === c ? 'var(--accent-light)' : '#fff',
+                          color: selectedColor === c ? 'var(--accent)' : 'var(--ink-2)',
+                          borderColor: selectedColor === c ? 'var(--accent)' : 'var(--sand-3)',
+                          fontWeight: selectedColor === c ? '600' : 'normal',
+                        }}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <p className="text-sm font-semibold mb-2 m-0" style={{ color: 'var(--ink-2)' }}>
+                  Số lượng mua
+                </p>
+                <QuantityStepper
+                  value={quantity}
+                  max={Math.max(product.stock, 1)}
+                  disabled={!inStock}
+                  onChange={setQuantity}
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={!inStock}
+                  className="btn-primary flex-1 py-4"
+                  style={{ background: addedToCart ? 'var(--success)' : undefined }}
+                >
+                  {addedToCart
+                    ? `✓ Đã thêm ${quantity} vào giỏ`
+                    : inStock
+                      ? `🛒 Thêm ${quantity} vào giỏ hàng`
+                      : 'Hết hàng'}
+                </button>
+                <button type="button" className="btn-ghost px-5 text-xl" title="Yêu thích" aria-label="Yêu thích">
+                  ♡
+                </button>
+              </div>
+            </>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             {[

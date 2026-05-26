@@ -257,19 +257,75 @@ const seed = async () => {
 
     const hashedPassword = await bcrypt.hash('123456', saltRounds);
 
-    await User.create({
-      name: 'Nguyễn hao',
-      email: 'hao@gmail.com',
-      password: hashedPassword,
-      role: 'Member',
-      points: 2450,
-      memberRank: 'Gold',
-    });
+    await User.create([
+      {
+        name: 'Khách Hàng Test',
+        email: 'customer@gmail.com',
+        password: hashedPassword,
+        role: 'Customer',
+        points: 100,
+        memberRank: 'Silver',
+        isVerified: true,
+      },
+      {
+        name: 'Nhân Viên Test',
+        email: 'staff@gmail.com',
+        password: hashedPassword,
+        role: 'Staff',
+        points: 0,
+        memberRank: 'Silver',
+        isVerified: true,
+      },
+      {
+        name: 'Admin Test',
+        email: 'admin@gmail.com',
+        password: hashedPassword,
+        role: 'Admin',
+        points: 0,
+        memberRank: 'Silver',
+        isVerified: true,
+      },
+      {
+        name: 'Nguyễn hao',
+        email: 'hao@gmail.com',
+        password: hashedPassword,
+        role: 'Customer',
+        points: 2450,
+        memberRank: 'Gold',
+        isVerified: true,
+      }
+    ]);
 
     console.log('✅ Tài khoản test đã tạo:');
-    console.log('   Email: hao@gmail.com');
+    console.log('   Email: customer@gmail.com, staff@gmail.com, admin@gmail.com');
     console.log('   Password: 123456');
-    console.log('   Vai trò: Member');
+    console.log('   Vai trò: Customer, Staff, Admin');
+
+    // Tự động gán sizes và colors phù hợp cho giày dép
+    for (const p of products) {
+      if (!p.sizes) {
+        if (p.category === 'Sandal') {
+          p.sizes = ['36', '37', '38', '39', '40'];
+        } else {
+          p.sizes = ['38', '39', '40', '41', '42'];
+        }
+      }
+      if (!p.colors) {
+        if (p.title.includes('Trắng')) {
+          p.colors = ['Trắng', 'Kem'];
+        } else if (p.title.includes('Đen')) {
+          p.colors = ['Đen', 'Xám'];
+        } else if (p.title.includes('Nâu')) {
+          p.colors = ['Nâu', 'Da Bò'];
+        } else if (p.title.includes('Đỏ')) {
+          p.colors = ['Đỏ', 'Đen'];
+        } else if (p.title.includes('Xám')) {
+          p.colors = ['Xám', 'Trắng'];
+        } else {
+          p.colors = ['Đen', 'Trắng', 'Xám'];
+        }
+      }
+    }
 
     console.log('⏳ Đang tải ảnh sản phẩm vào database...');
     const seeded = [];

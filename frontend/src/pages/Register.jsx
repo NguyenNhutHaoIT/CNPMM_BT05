@@ -3,17 +3,20 @@ import axios from '../api/axios';
 import { useNavigate, Link } from 'react-router-dom';
 
 export default function Register() {
+  const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
+    otp: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const nav = useNavigate();
 
-  const submit = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -36,13 +39,37 @@ export default function Register() {
       });
 
       if (res.EC === 0) {
-        alert('Đăng ký tài khoản thành công! Vui lòng đăng nhập.');
-        nav('/login');
+        setSuccess('Vui lòng kiểm tra email để lấy mã OTP xác nhận.');
+        setStep(2);
       } else {
         setError(res.EM || 'Đăng ký thất bại');
       }
-    } catch {
-      setError('Lỗi kết nối. Vui lòng thử lại sau');
+    } catch (err) {
+      setError(err?.EM || 'Lỗi kết nối. Vui lòng thử lại sau');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const res = await axios.post('/auth/verify-otp', {
+        email: form.email,
+        otp: form.otp
+      });
+
+      if (res.EC === 0) {
+        alert('Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.');
+        nav('/login');
+      } else {
+        setError(res.EM || 'Mã OTP không hợp lệ');
+      }
+    } catch (err) {
+      setError(err?.EM || 'Lỗi kết nối. Vui lòng thử lại sau');
     } finally {
       setLoading(false);
     }
@@ -61,10 +88,10 @@ export default function Register() {
           <div className="text-center mb-9">
             <div className="text-5xl mb-5">✦</div>
             <h1 className="font-serif text-3xl font-bold mb-2" style={{ color: 'var(--ink)' }}>
-              Tạo tài khoản
+              {step === 1 ? 'Tạo tài khoản' : 'Xác thực OTP'}
             </h1>
             <p className="text-sm" style={{ color: 'var(--ink-3)' }}>
-              Tham gia để nhận ưu đãi đặc biệt
+              {step === 1 ? 'Tham gia để nhận ưu đãi đặc biệt' : 'Mã OTP 6 số đã được gửi tới email của bạn'}
             </p>
           </div>
 
@@ -77,50 +104,85 @@ export default function Register() {
             </div>
           )}
 
-          <form onSubmit={submit} className="space-y-4">
-            <input
-              type="text"
-              required
-              className="form-input"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Họ và tên"
-            />
-            <input
-              type="email"
-              required
-              className="form-input"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              placeholder="Email"
-            />
-            <input
-              type="password"
-              required
-              className="form-input"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="Mật khẩu"
-            />
-            <input
-              type="password"
-              required
-              className="form-input"
-              value={form.confirmPassword}
-              onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-              placeholder="Xác nhận mật khẩu"
-            />
-            <button type="submit" disabled={loading} className="btn-primary w-full py-4 mt-2">
-              {loading ? 'Đang xử lý...' : 'Đăng ký'}
-            </button>
-          </form>
+          {success && step === 2 && (
+            <div
+              className="mb-5 px-4 py-3 rounded-xl text-sm text-center"
+              style={{ background: '#e8f5e9', color: '#1b5e20' }}
+            >
+              {success}
+            </div>
+          )}
 
-          <p className="text-center mt-8 text-sm" style={{ color: 'var(--ink-3)' }}>
-            Đã có tài khoản?{' '}
-            <Link to="/login" className="font-semibold" style={{ color: 'var(--accent)' }}>
-              Đăng nhập
-            </Link>
-          </p>
+          {step === 1 ? (
+            <form onSubmit={handleRegister} className="space-y-4">
+              <input
+                type="text"
+                required
+                className="form-input"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Họ và tên"
+              />
+              <input
+                type="email"
+                required
+                className="form-input"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder="Email"
+              />
+              <input
+                type="password"
+                required
+                className="form-input"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="Mật khẩu (ít nhất 6 ký tự)"
+              />
+              <input
+                type="password"
+                required
+                className="form-input"
+                value={form.confirmPassword}
+                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                placeholder="Xác nhận mật khẩu"
+              />
+              <button type="submit" disabled={loading} className="btn-primary w-full py-4 mt-2">
+                {loading ? 'Đang xử lý...' : 'Đăng ký'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOTP} className="space-y-4">
+              <input
+                type="text"
+                required
+                className="form-input text-center text-2xl tracking-widest"
+                maxLength={6}
+                value={form.otp}
+                onChange={(e) => setForm({ ...form, otp: e.target.value })}
+                placeholder="------"
+              />
+              <button type="submit" disabled={loading} className="btn-primary w-full py-4 mt-2">
+                {loading ? 'Đang xác thực...' : 'Xác thực'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="w-full py-2 text-sm text-gray-500 hover:text-gray-800"
+              >
+                Quay lại
+              </button>
+            </form>
+          )}
+
+          {step === 1 && (
+            <p className="text-center mt-8 text-sm" style={{ color: 'var(--ink-3)' }}>
+              Đã có tài khoản?{' '}
+              <Link to="/login" className="font-semibold" style={{ color: 'var(--accent)' }}>
+                Đăng nhập
+              </Link>
+            </p>
+          )}
         </div>
       </div>
     </div>
