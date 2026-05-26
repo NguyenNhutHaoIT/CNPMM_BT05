@@ -1,4 +1,4 @@
-# 🛍️ Full Stack E-Commerce Project
+
 
 Một dự án bán hàng trực tuyến hoàn chỉnh xây dựng với **Node.js + Express + MongoDB** (Backend) và **React + Vite + Tailwind CSS** (Frontend).
 
